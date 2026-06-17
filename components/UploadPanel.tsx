@@ -47,7 +47,7 @@ export function UploadPanel({ fileName, recordCount, sourceLabel, error, onFile,
           />
         </label>
 
-        <div className="min-w-0 rounded-2xl border border-stone-100 bg-stone-50 p-4 sm:p-5">
+        <div className="min-w-0 overflow-hidden rounded-2xl border border-stone-100 bg-stone-50 p-4 sm:p-5">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-white p-3 text-emerald-700 shadow-sm">
               <FileSpreadsheet size={22} />
@@ -59,18 +59,20 @@ export function UploadPanel({ fileName, recordCount, sourceLabel, error, onFile,
               </p>
             </div>
           </div>
-          <dl className="mt-5 grid gap-3">
-            <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl bg-white px-4 py-3">
+          <dl className="mt-5 grid min-w-0 gap-3">
+            <div className="flex min-w-0 flex-col items-start gap-1 rounded-xl bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
               <dt className="text-sm font-semibold text-slate-500">파일명</dt>
-              <dd className="min-w-0 truncate text-right text-sm font-bold text-slate-900">{fileName ?? "선택된 파일 없음"}</dd>
+              <dd className="w-full min-w-0 break-all text-left text-sm font-bold text-slate-900 sm:text-right">
+                {fileName ?? "선택된 파일 없음"}
+              </dd>
             </div>
-            <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3">
+            <div className="flex min-w-0 flex-col items-start gap-1 rounded-xl bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
               <dt className="text-sm font-semibold text-slate-500">데이터 행 수</dt>
               <dd className="text-sm font-bold text-slate-900">{recordCount}</dd>
             </div>
-            <div className="rounded-xl bg-white px-4 py-3">
+            <div className="min-w-0 rounded-xl bg-white px-4 py-3">
               <dt className="text-sm font-semibold text-slate-500">분석 컬럼</dt>
-              <dd className="mt-2 overflow-x-auto whitespace-nowrap text-xs text-slate-600">
+              <dd className="mt-2 max-w-full break-words text-[11px] leading-5 text-slate-600 sm:text-xs">
                 date, product, category, price, quantity, customerType, region
               </dd>
             </div>
