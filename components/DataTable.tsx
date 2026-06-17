@@ -63,9 +63,9 @@ export function DataTable({
   };
 
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+    <section className="min-w-0 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div>
+        <div className="min-w-0">
           <h2 className="text-2xl font-bold text-slate-950">원본 데이터 테이블</h2>
           <p className="mt-1 text-sm text-slate-500">
             총 {formatNumber(records.length)}개 중 {formatNumber(start)}~{formatNumber(end)}개 표시
@@ -74,51 +74,51 @@ export function DataTable({
         <button
           type="button"
           onClick={resetFilters}
-          className="no-print inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-stone-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+          className="no-print inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <RotateCcw size={16} />
           필터 초기화
         </button>
       </div>
 
-      <div className="no-print mt-4 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+      <div className="no-print mt-4 break-keep rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold leading-6 text-emerald-800">
         적용된 필터: {activeFilters}
       </div>
 
-      <div className="no-print mt-6 flex flex-wrap gap-3">
-        <label className="relative min-w-[260px] flex-1">
+      <div className="no-print mt-6 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1.4fr)_repeat(3,minmax(150px,1fr))_minmax(290px,1.4fr)]">
+        <label className="relative min-w-0">
           <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
           <input
             value={filters.query}
             onChange={(event) => updateFilter("query", event.target.value)}
             placeholder="상품명, 카테고리, 지역 검색"
-            className="h-10 w-full rounded-xl border border-stone-300 bg-white pl-10 pr-4 text-sm"
+            className="h-11 w-full min-w-0 rounded-xl border border-stone-300 bg-white pl-10 pr-4 text-sm"
           />
         </label>
         <Select value={filters.category} onChange={(value) => updateFilter("category", value)} options={categories} label="전체 카테고리" />
         <Select value={filters.customerType} onChange={(value) => updateFilter("customerType", value)} options={customerTypes} label="전체 고객 유형" />
         <Select value={filters.region} onChange={(value) => updateFilter("region", value)} options={regions} label="전체 지역" />
-        <div className="grid min-w-[300px] flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-2 xl:col-span-1">
           <input
             type="date"
             aria-label="날짜 시작"
             value={filters.startDate}
             onChange={(event) => updateFilter("startDate", event.target.value)}
-            className="h-10 min-w-[145px] rounded-xl border border-stone-300 bg-white px-4 text-sm"
+            className="h-11 min-w-0 rounded-xl border border-stone-300 bg-white px-3 text-sm sm:px-4"
           />
           <input
             type="date"
             aria-label="날짜 종료"
             value={filters.endDate}
             onChange={(event) => updateFilter("endDate", event.target.value)}
-            className="h-10 min-w-[145px] rounded-xl border border-stone-300 bg-white px-4 text-sm"
+            className="h-11 min-w-0 rounded-xl border border-stone-300 bg-white px-3 text-sm sm:px-4"
           />
         </div>
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-stone-200">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[960px] border-collapse text-left text-[13px]">
+      <div className="mt-6 min-w-0 overflow-hidden rounded-2xl border border-stone-200">
+        <div className="max-w-full overflow-x-auto">
+          <table className="w-full min-w-[820px] border-collapse text-left text-[13px] sm:min-w-[960px]">
             <thead className="bg-stone-50 text-xs font-bold text-slate-600">
               <tr>
                 <SortableTh label="날짜" active={sortKey === "date"} direction={sortDirection} onClick={() => onSortChange("date")} />
@@ -165,7 +165,7 @@ export function DataTable({
         <p className="text-sm text-slate-500">
           {formatNumber(safePage)} / {formatNumber(totalPages)} 페이지
         </p>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex">
           <PaginationButton disabled={safePage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>
             <ChevronLeft size={16} />
             이전
@@ -185,7 +185,7 @@ function Select({ value, onChange, options, label }: { value: string; onChange: 
     <select
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      className="h-10 min-w-[150px] flex-1 rounded-xl border border-stone-300 bg-white px-4 text-sm"
+      className="h-11 min-w-0 rounded-xl border border-stone-300 bg-white px-4 text-sm"
     >
       <option value="">{label}</option>
       {options.map((option) => (
@@ -231,7 +231,7 @@ function PaginationButton({ children, disabled, onClick }: { children: ReactNode
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-xl border border-stone-300 px-4 text-sm font-semibold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:bg-stone-50 disabled:text-slate-400 disabled:opacity-70"
+      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-stone-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:bg-stone-50 disabled:text-slate-400 disabled:opacity-70"
     >
       {children}
     </button>

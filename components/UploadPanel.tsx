@@ -18,20 +18,20 @@ export function UploadPanel({ fileName, recordCount, sourceLabel, error, onFile,
   };
 
   return (
-    <section id="upload-panel" className="no-print rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-      <div className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
+    <section id="upload-panel" className="no-print min-w-0 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.9fr)]">
         <label
           tabIndex={0}
           onDragOver={(event) => event.preventDefault()}
           onDrop={handleDrop}
-          className="flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/50 p-6 text-center transition hover:border-emerald-400 hover:bg-emerald-50"
+          className="flex min-h-56 min-w-0 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/50 p-5 text-center transition hover:border-emerald-400 hover:bg-emerald-50 sm:p-6"
         >
           <Upload className="text-emerald-700" size={34} />
           <span className="mt-4 text-lg font-bold text-slate-950">CSV 파일을 업로드하세요</span>
           <span className="mt-2 max-w-lg text-sm leading-6 text-slate-600">
             date, product, category, price, quantity, customerType, region 컬럼을 포함한 CSV 파일을 지원합니다.
           </span>
-          <span className="mt-5 inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-xl bg-emerald-600 px-4 font-semibold text-white">
+          <span className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 font-semibold text-white">
             <FileUp size={17} />
             파일 선택
           </span>
@@ -47,22 +47,24 @@ export function UploadPanel({ fileName, recordCount, sourceLabel, error, onFile,
           />
         </label>
 
-        <div className="rounded-2xl border border-stone-100 bg-stone-50 p-5">
+        <div className="min-w-0 rounded-2xl border border-stone-100 bg-stone-50 p-4 sm:p-5">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-white p-3 text-emerald-700 shadow-sm">
               <FileSpreadsheet size={22} />
             </div>
-            <div>
+            <div className="min-w-0">
               <h2 className="text-lg font-bold text-slate-950">업로드 상태</h2>
-              <p className="mt-1 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">{sourceLabel}</p>
+              <p className="mt-1 inline-flex max-w-full rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                <span className="truncate">{sourceLabel}</span>
+              </p>
             </div>
           </div>
           <dl className="mt-5 grid gap-3">
-            <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3">
+            <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl bg-white px-4 py-3">
               <dt className="text-sm font-semibold text-slate-500">파일명</dt>
-              <dd className="max-w-44 truncate text-sm font-bold text-slate-900">{fileName ?? "선택된 파일 없음"}</dd>
+              <dd className="min-w-0 truncate text-right text-sm font-bold text-slate-900">{fileName ?? "선택된 파일 없음"}</dd>
             </div>
-            <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3">
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3">
               <dt className="text-sm font-semibold text-slate-500">데이터 행 수</dt>
               <dd className="text-sm font-bold text-slate-900">{recordCount}</dd>
             </div>
@@ -78,11 +80,11 @@ export function UploadPanel({ fileName, recordCount, sourceLabel, error, onFile,
               {error}
             </p>
           ) : null}
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <button
               type="button"
               onClick={onSample}
-              className="inline-flex h-11 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
             >
               <FileSpreadsheet size={17} />
               샘플 데이터로 체험하기
@@ -90,7 +92,7 @@ export function UploadPanel({ fileName, recordCount, sourceLabel, error, onFile,
             <button
               type="button"
               onClick={onReset}
-              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-stone-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:text-emerald-700"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:text-emerald-700"
             >
               <RotateCcw size={17} />
               데이터 초기화

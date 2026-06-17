@@ -17,13 +17,13 @@ const accentClass = {
 
 export function KpiCard({ title, value, detail, icon: Icon, accent = "emerald" }: KpiCardProps) {
   return (
-    <article className="print-section rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+    <article className="print-section min-w-0 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
       <div className="flex items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-semibold text-slate-500">{title}</p>
-          <p className="mt-3 text-2xl font-bold text-slate-950">{value}</p>
+          <p className="mt-3 break-keep text-2xl font-bold text-slate-950">{value}</p>
         </div>
-        <div className={`rounded-xl p-3 ${accentClass[accent]}`}>
+        <div className={`shrink-0 rounded-xl p-3 ${accentClass[accent]}`}>
           <Icon size={21} />
         </div>
       </div>

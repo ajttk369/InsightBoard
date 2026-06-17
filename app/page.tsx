@@ -172,7 +172,7 @@ export default function Home() {
   };
 
   return (
-    <main className="mx-auto max-w-[1440px] px-4 pb-14 sm:px-6 lg:px-10">
+    <main className="mx-auto min-w-0 max-w-[1440px] px-4 pb-14 sm:px-6 lg:px-10">
       <Hero onSample={loadSample} onUploadFocus={() => uploadRef.current?.scrollIntoView({ behavior: "smooth" })} />
 
       <div ref={uploadRef}>
@@ -188,15 +188,15 @@ export default function Home() {
       </div>
 
       {!hasData ? (
-        <section className="mt-12 rounded-2xl border border-stone-200 bg-white p-7 shadow-sm">
+        <section className="mt-12 min-w-0 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-7">
           <h2 className="text-2xl font-bold text-slate-950">CSV를 업로드하거나 샘플 데이터로 대시보드를 확인해보세요.</h2>
           <p className="mt-3 max-w-3xl leading-7 text-slate-600">
             필요한 컬럼은 date, product, category, price, quantity, customerType, region입니다. 데이터가 들어오면 주요 지표와 차트,
             테이블이 같은 기준으로 갱신됩니다.
           </p>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="mt-6 grid min-w-0 gap-4 md:grid-cols-3">
             {["KPI 계산", "매출 차트", "필터링 테이블"].map((item) => (
-              <div key={item} className="rounded-xl border border-stone-100 bg-stone-50 p-5 font-semibold text-slate-700">
+              <div key={item} className="min-w-0 rounded-xl border border-stone-100 bg-stone-50 p-5 font-semibold text-slate-700">
                 {item}
               </div>
             ))}
@@ -206,27 +206,27 @@ export default function Home() {
 
       {hasData ? (
         <>
-          <section className="print-grid mt-14 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="print-grid mt-14 grid min-w-0 gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {primaryKpis.map((kpi) => (
               <KpiCard key={kpi.title} {...kpi} />
             ))}
           </section>
 
-          <div className="mt-4 inline-flex rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-800">
+          <div className="mt-4 inline-flex max-w-full rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-800">
             {filterBasisLabel}
           </div>
 
-          <section className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="mt-5 grid min-w-0 gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {secondaryKpis.map((kpi) => (
               <KpiCard key={kpi.title} {...kpi} />
             ))}
           </section>
 
-          <section className="print-section mt-12 rounded-2xl border border-emerald-100 bg-emerald-50 p-6">
+          <section className="print-section mt-12 min-w-0 rounded-2xl border border-emerald-100 bg-emerald-50 p-5 sm:p-6">
             <h2 className="text-xl font-bold text-slate-950">분석 요약</h2>
-            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-5 grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
               {summaryCards.map(([title, value, detail]) => (
-                <article key={title} className="rounded-xl border border-emerald-100 bg-white p-5">
+                <article key={title} className="min-w-0 rounded-xl border border-emerald-100 bg-white p-5">
                   <p className="text-sm font-bold text-emerald-700">{title}</p>
                   <p className="mt-3 text-2xl font-bold text-slate-950">{value}</p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{detail}</p>
@@ -235,12 +235,12 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="no-print mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <section className="no-print mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
             <button
               type="button"
               onClick={handleDownload}
               disabled={!hasFilteredData}
-              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-stone-300"
             >
               <Download size={17} />
               CSV 다운로드
@@ -248,14 +248,14 @@ export default function Home() {
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-stone-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:text-emerald-700"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:text-emerald-700"
             >
               <Printer size={17} />
               리포트 저장
             </button>
           </section>
 
-          <section className="print-grid mt-14 grid gap-6 lg:grid-cols-2">
+          <section className="print-grid mt-14 grid min-w-0 gap-6 lg:grid-cols-2">
             <ChartCard title="매출 추이" description="날짜별 매출 변화를 확인합니다." empty={!hasFilteredData}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={analytics.dailyRevenue}>
@@ -333,7 +333,7 @@ export default function Home() {
               <h2 className="text-2xl font-bold text-slate-950">데이터 인사이트</h2>
               <p className="mt-2 text-sm text-slate-500">집계 결과에서 바로 확인할 수 있는 운영 포인트입니다.</p>
             </div>
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid min-w-0 gap-5 md:grid-cols-2 xl:grid-cols-4">
               {insights.map((insight) => (
                 <InsightCard key={insight.title} insight={insight} />
               ))}
@@ -381,12 +381,12 @@ function CustomerMixCard({
   returningRate: number;
 }) {
   return (
-    <article className="print-section rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+    <article className="print-section min-w-0 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
       <h3 className="text-lg font-bold text-slate-950">신규/재구매 고객 비율</h3>
       <p className="mt-2 text-[13px] leading-6 text-slate-600">고객 유형별 주문 비중을 비교합니다.</p>
       {hasData ? (
         <div className="mt-8">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <CustomerRatio label="신규 고객" value={newRate} count={newCount} className="text-lime-700" />
             <CustomerRatio label="재구매 고객" value={returningRate} count={returningCount} className="text-orange-600" />
           </div>
@@ -408,7 +408,7 @@ function CustomerMixCard({
 
 function CustomerRatio({ label, value, count, className }: { label: string; value: number; count: number; className: string }) {
   return (
-    <div className="rounded-xl border border-stone-100 bg-stone-50 p-5">
+    <div className="min-w-0 rounded-xl border border-stone-100 bg-stone-50 p-5">
       <p className={`text-sm font-bold ${className}`}>{label}</p>
       <p className="mt-3 text-3xl font-bold text-slate-950">{formatPercent(value)}</p>
       <p className="mt-2 text-sm text-slate-600">{formatNumber(count)}건</p>
@@ -435,12 +435,12 @@ function KeyMetricCard({
   ];
 
   return (
-    <article className="print-section rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+    <article className="print-section min-w-0 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
       <h3 className="text-lg font-bold text-slate-950">핵심 지표 보조 카드</h3>
       <p className="mt-2 text-[13px] leading-6 text-slate-600">현재 조건에서 눈여겨볼 값을 따로 정리했습니다.</p>
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+      <div className="mt-6 grid min-w-0 gap-3 sm:grid-cols-2">
         {items.map(([label, value]) => (
-          <div key={label} className="rounded-xl border border-stone-100 bg-stone-50 p-4">
+          <div key={label} className="min-w-0 rounded-xl border border-stone-100 bg-stone-50 p-4">
             <p className="text-xs font-bold text-slate-500">{label}</p>
             <p className="mt-2 text-xl font-bold text-slate-950">{value}</p>
           </div>
