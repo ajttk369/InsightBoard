@@ -123,6 +123,13 @@ export default function Home() {
     setFilters(emptyFilters);
   };
 
+  const loadSampleAndMoveToDashboard = () => {
+    loadSample();
+    window.setTimeout(() => {
+      uploadRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
+
   const handleFile = async (file: File) => {
     if (!file.name.toLowerCase().endsWith(".csv")) {
       setError("CSV 파일만 업로드할 수 있습니다. 필수 컬럼 형식을 확인해주세요.");
@@ -173,7 +180,7 @@ export default function Home() {
 
   return (
     <main className="mx-auto min-w-0 max-w-[1440px] px-4 pb-14 sm:px-6 lg:px-10">
-      <Hero onSample={loadSample} onUploadFocus={() => uploadRef.current?.scrollIntoView({ behavior: "smooth" })} />
+      <Hero onSample={loadSampleAndMoveToDashboard} onUploadFocus={() => uploadRef.current?.scrollIntoView({ behavior: "smooth" })} />
 
       <div ref={uploadRef}>
         <UploadPanel
