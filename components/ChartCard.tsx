@@ -9,7 +9,7 @@ type ChartCardProps = {
 
 export function ChartCard({ title, description, empty, children }: ChartCardProps) {
   return (
-    <article className="print-section min-w-0 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
+    <article className="print-section min-w-0 max-w-full overflow-hidden rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
       <div className="mb-5">
         <h3 className="text-lg font-bold text-slate-950">{title}</h3>
         <p className="mt-2 text-[13px] leading-6 text-slate-600">{description}</p>
@@ -19,7 +19,7 @@ export function ChartCard({ title, description, empty, children }: ChartCardProp
           표시할 데이터가 없습니다.
         </div>
       ) : (
-        <div className="h-72 min-w-0">{children}</div>
+        <div className="h-72 w-full min-w-0 overflow-hidden">{children}</div>
       )}
     </article>
   );

@@ -115,6 +115,10 @@ export default function Home() {
     ["고객 흐름", formatPercent(analytics.returningRate), "재구매 주문이 차지하는 비율입니다."],
   ];
 
+  const moveToUploadPanel = () => {
+    uploadRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const loadSample = () => {
     setRecords(sampleData);
     setSource("sample");
@@ -125,9 +129,7 @@ export default function Home() {
 
   const loadSampleAndMoveToDashboard = () => {
     loadSample();
-    window.setTimeout(() => {
-      uploadRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
+    window.setTimeout(moveToUploadPanel, 50);
   };
 
   const handleFile = async (file: File) => {
@@ -179,8 +181,8 @@ export default function Home() {
   };
 
   return (
-    <main className="mx-auto min-w-0 max-w-[1440px] px-4 pb-14 sm:px-6 lg:px-10">
-      <Hero onSample={loadSampleAndMoveToDashboard} onUploadFocus={() => uploadRef.current?.scrollIntoView({ behavior: "smooth" })} />
+    <main className="mx-auto w-full max-w-[1440px] overflow-x-hidden px-4 pb-14 sm:px-6 lg:px-10">
+      <Hero onSample={loadSampleAndMoveToDashboard} onUploadFocus={moveToUploadPanel} />
 
       <div ref={uploadRef}>
         <UploadPanel

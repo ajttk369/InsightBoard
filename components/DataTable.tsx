@@ -63,7 +63,7 @@ export function DataTable({
   };
 
   return (
-    <section className="min-w-0 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
+    <section className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <h2 className="text-2xl font-bold text-slate-950">원본 데이터 테이블</h2>
@@ -116,8 +116,8 @@ export function DataTable({
         </div>
       </div>
 
-      <div className="mt-6 min-w-0 overflow-hidden rounded-2xl border border-stone-200">
-        <div className="max-w-full overflow-x-auto">
+      <div className="mt-6 min-w-0 max-w-full overflow-hidden rounded-2xl border border-stone-200">
+        <div className="w-full max-w-full overflow-x-auto">
           <table className="w-full min-w-[820px] border-collapse text-left text-[13px] sm:min-w-[960px]">
             <thead className="bg-stone-50 text-xs font-bold text-slate-600">
               <tr>
