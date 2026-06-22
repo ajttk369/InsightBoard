@@ -35,6 +35,8 @@ const splitCsvLine = (line: string) => {
   return result;
 };
 
+const parseNumber = (value: string) => Number(value.replace(/[₩,\s]/g, ""));
+
 export const parseSalesCsv = (text: string): { data: SalesRecord[]; error?: string } => {
   const normalized = text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
 
@@ -55,8 +57,8 @@ export const parseSalesCsv = (text: string): { data: SalesRecord[]; error?: stri
   for (let lineIndex = 1; lineIndex < lines.length; lineIndex += 1) {
     const values = splitCsvLine(lines[lineIndex]);
     const row = Object.fromEntries(headers.map((header, index) => [header, values[index]?.trim() ?? ""]));
-    const price = Number(row.price);
-    const quantity = Number(row.quantity);
+    const price = parseNumber(row.price);
+    const quantity = parseNumber(row.quantity);
     const customerType = customerMap[row.customerType];
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(row.date)) {
@@ -95,12 +97,12 @@ export const parseSalesCsv = (text: string): { data: SalesRecord[]; error?: stri
 };
 
 export const recordsToCsv = (records: SalesRecord[]) => {
-  const header = "date,product,category,price,quantity,customerType,region";
+  const header = "date,product,category,price,quantity,revenue,customerType,region";
   const rows = records.map((record) =>
-    [record.date, record.product, record.category, record.price, record.quantity, record.customerType, record.region]
+    [record.date, record.product, record.category, record.price, record.quantity, record.price * record.quantity, record.customerType, record.region]
       .map((value) => `"${String(value).replace(/"/g, '""')}"`)
       .join(","),
   );
 
-  return [header, ...rows].join("\n");
+  return `\uFEFF${[header, ...rows].join("\n")}`;
 };

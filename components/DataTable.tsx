@@ -116,7 +116,47 @@ export function DataTable({
         </div>
       </div>
 
-      <div className="mt-6 min-w-0 max-w-full overflow-hidden rounded-2xl border border-stone-200">
+      <div className="mt-6 grid gap-3 sm:hidden">
+        {visibleRecords.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50 px-4 py-8 text-center text-sm font-semibold text-slate-500">
+            조건에 맞는 데이터가 없습니다. 필터를 변경해보세요.
+          </div>
+        ) : (
+          visibleRecords.map((record) => (
+            <article key={record.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-base font-bold text-slate-950">{record.product}</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-500">
+                    {record.date} · {record.category}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full bg-stone-100 px-3 py-1 text-xs font-bold text-slate-700">
+                  {record.customerType}
+                </span>
+              </div>
+              <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-xl bg-stone-50 p-3">
+                  <dt className="text-xs font-bold text-slate-500">매출</dt>
+                  <dd className="mt-1 font-bold tabular-nums text-slate-950">{formatCurrency(getRevenue(record))}</dd>
+                </div>
+                <div className="rounded-xl bg-stone-50 p-3">
+                  <dt className="text-xs font-bold text-slate-500">가격 / 수량</dt>
+                  <dd className="mt-1 font-semibold tabular-nums text-slate-700">
+                    {formatCurrency(record.price)} · {formatNumber(record.quantity)}개
+                  </dd>
+                </div>
+                <div className="col-span-2 rounded-xl bg-stone-50 p-3">
+                  <dt className="text-xs font-bold text-slate-500">지역</dt>
+                  <dd className="mt-1 font-semibold text-slate-700">{record.region}</dd>
+                </div>
+              </dl>
+            </article>
+          ))
+        )}
+      </div>
+
+      <div className="mt-6 hidden min-w-0 max-w-full overflow-hidden rounded-2xl border border-stone-200 sm:block">
         <div className="w-full max-w-full overflow-x-auto">
           <table className="w-full min-w-[820px] border-collapse text-left text-[13px] sm:min-w-[960px]">
             <thead className="bg-stone-50 text-xs font-bold text-slate-600">
