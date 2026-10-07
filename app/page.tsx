@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   Area,
   AreaChart,
@@ -25,7 +26,7 @@ import { KpiCard } from "@/components/KpiCard";
 import { ProjectOverview } from "@/components/ProjectOverview";
 import { UploadPanel } from "@/components/UploadPanel";
 import { buildAnalytics, buildInsights, getRevenue } from "@/lib/analytics";
-import { parseSalesCsv, recordsToCsv } from "@/lib/csv";
+import { MAX_CSV_BYTES, parseSalesCsv, recordsToCsv } from "@/lib/csv";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { sampleData } from "@/lib/sampleData";
 import type { DashboardSource, Filters, SalesRecord, SortKey } from "@/types/sales";
@@ -46,10 +47,33 @@ export default function Home() {
   const [source, setSource] = useState<DashboardSource>("empty");
   const [fileName, setFileName] = useState<string>();
   const [error, setError] = useState<string>();
+  const [isReading, setReading] = useState(false);
+  const [isPrinting, setPrinting] = useState(false);
+  const [dataVersion, setDataVersion] = useState(0);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const uploadRef = useRef<HTMLDivElement>(null);
+  const readingRequest = useRef(0);
+
+  useEffect(() => {
+    const beforePrint = () => flushSync(() => setPrinting(true));
+    const afterPrint = () => setPrinting(false);
+    const preventFileNavigation = (event: DragEvent) => {
+      if (event.dataTransfer?.types.includes("Files")) event.preventDefault();
+    };
+    window.addEventListener("beforeprint", beforePrint);
+    window.addEventListener("afterprint", afterPrint);
+    window.addEventListener("dragover", preventFileNavigation);
+    window.addEventListener("drop", preventFileNavigation);
+    return () => {
+      readingRequest.current += 1;
+      window.removeEventListener("beforeprint", beforePrint);
+      window.removeEventListener("afterprint", afterPrint);
+      window.removeEventListener("dragover", preventFileNavigation);
+      window.removeEventListener("drop", preventFileNavigation);
+    };
+  }, []);
 
   const filteredRecords = useMemo(() => {
     const query = filters.query.trim().toLowerCase();
@@ -77,7 +101,9 @@ export default function Home() {
   }, [filters, records, sortDirection, sortKey]);
 
   const analytics = useMemo(() => buildAnalytics(filteredRecords), [filteredRecords]);
-  const insights = useMemo(() => buildInsights(filteredRecords), [filteredRecords]);
+  const categoryChartData = useMemo(() => compactChartGroups(analytics.categoryRevenue, 8), [analytics.categoryRevenue]);
+  const regionChartData = useMemo(() => compactChartGroups(analytics.regionRevenue, 10), [analytics.regionRevenue]);
+  const insights = useMemo(() => buildInsights(filteredRecords, analytics), [filteredRecords, analytics]);
   const categories = useMemo(() => unique(records.map((record) => record.category)), [records]);
   const customerTypes = useMemo(() => unique(records.map((record) => record.customerType)), [records]);
   const regions = useMemo(() => unique(records.map((record) => record.region)), [records]);
@@ -85,7 +111,7 @@ export default function Home() {
   const hasData = records.length > 0;
   const hasFilteredData = filteredRecords.length > 0;
   const hasActiveFilters = Object.values(filters).some(Boolean);
-  const sourceLabel =
+  const sourceLabel = isReading ? "새 CSV 파일을 읽는 중" :
     source === "sample" ? "샘플 데이터 사용 중" : source === "upload" ? "CSV 업로드 완료" : "아직 데이터가 없습니다";
   const filterBasisLabel = hasActiveFilters ? "필터 적용 데이터 기준" : "전체 데이터 기준";
 
@@ -96,7 +122,7 @@ export default function Home() {
 
   const primaryKpis = [
     { title: "총 매출", value: formatCurrency(analytics.totalRevenue), detail: "필터 기준 누적 매출", icon: TrendingUp },
-    { title: "총 주문 수", value: formatNumber(analytics.totalOrders), detail: "분석 대상 주문 건수", icon: ShoppingCart, accent: "mint" as const },
+    { title: "총 주문 수", value: formatNumber(analytics.totalOrders), detail: "CSV 1행을 주문 1건으로 집계", icon: ShoppingCart, accent: "mint" as const },
     { title: "총 판매 수량", value: formatNumber(analytics.totalQuantity), detail: "판매된 상품 수량 합계", icon: Boxes, accent: "lime" as const },
     { title: "평균 주문 금액", value: formatCurrency(analytics.averageOrderValue), detail: "주문 1건당 평균 매출", icon: ReceiptText, accent: "amber" as const },
   ];
@@ -104,7 +130,7 @@ export default function Home() {
   const secondaryKpis = [
     { title: "최고 판매 상품", value: analytics.topProduct, detail: "판매 수량 기준 상위 상품", icon: Package, accent: "mint" as const },
     { title: "최고 매출 지역", value: analytics.topRegion, detail: "매출 합계가 가장 높은 지역", icon: TrendingUp },
-    { title: "재구매 비율", value: formatPercent(analytics.returningRate), detail: "전체 주문 중 재구매 비중", icon: Users, accent: "amber" as const },
+    { title: "재구매 비율", value: formatPercent(analytics.returningRate), detail: "재구매로 분류된 행의 비중", icon: Users, accent: "amber" as const },
     { title: "최고 매출 카테고리", value: analytics.topCategory, detail: "매출 비중이 가장 높은 카테고리", icon: Package, accent: "lime" as const },
   ];
 
@@ -120,11 +146,16 @@ export default function Home() {
   };
 
   const loadSample = () => {
+    readingRequest.current += 1;
+    setReading(false);
     setRecords(sampleData);
     setSource("sample");
     setFileName("sample-sales-data.csv");
     setError(undefined);
     setFilters(emptyFilters);
+    setSortKey("date");
+    setSortDirection("asc");
+    setDataVersion((version) => version + 1);
   };
 
   const loadSampleAndMoveToDashboard = () => {
@@ -133,30 +164,54 @@ export default function Home() {
   };
 
   const handleFile = async (file: File) => {
+    const request = ++readingRequest.current;
+    setReading(false);
+    setError(undefined);
     if (!file.name.toLowerCase().endsWith(".csv")) {
       setError("CSV 파일만 업로드할 수 있습니다. 필수 컬럼 형식을 확인해주세요.");
       return;
     }
-
-    const parsed = parseSalesCsv(await file.text());
-    if (parsed.error) {
-      setError(parsed.error);
+    if (file.size > MAX_CSV_BYTES) {
+      setError("CSV는 10MB 이하 파일만 지원합니다.");
       return;
     }
-
-    setRecords(parsed.data);
-    setSource("upload");
-    setFileName(file.name);
-    setError(undefined);
-    setFilters(emptyFilters);
+    setReading(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      if (request !== readingRequest.current) return;
+      let text: string;
+      try {
+        text = new TextDecoder("utf-8", { fatal: true }).decode(buffer);
+      } catch {
+        throw new Error("파일을 UTF-8로 읽을 수 없습니다. 엑셀에서 CSV UTF-8 형식으로 저장해 주세요.");
+      }
+      const parsed = parseSalesCsv(text);
+      if (parsed.error) throw new Error(parsed.error);
+      if (request !== readingRequest.current) return;
+      setRecords(parsed.data);
+      setSource("upload");
+      setFileName(file.name);
+      setFilters(emptyFilters);
+      setSortKey("date");
+      setSortDirection("asc");
+      setDataVersion((version) => version + 1);
+    } catch (failure) {
+      if (request === readingRequest.current) setError(failure instanceof Error ? failure.message : "파일을 읽지 못했습니다. 다시 선택해 주세요.");
+    } finally {
+      if (request === readingRequest.current) setReading(false);
+    }
   };
 
   const reset = () => {
+    readingRequest.current += 1;
+    setReading(false);
     setRecords([]);
     setSource("empty");
     setFileName(undefined);
     setError(undefined);
     setFilters(emptyFilters);
+    setSortKey("date");
+    setSortDirection("asc");
   };
 
   const handleDownload = () => {
@@ -166,8 +221,10 @@ export default function Home() {
 
     link.href = url;
     link.download = "insightboard-filtered-data.csv";
+    document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(url);
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const handleSortChange = (key: SortKey) => {
@@ -183,6 +240,11 @@ export default function Home() {
   return (
     <main className="mx-auto w-full max-w-[1440px] overflow-x-hidden px-4 pb-14 sm:px-6 lg:px-10">
       <Hero onSample={loadSampleAndMoveToDashboard} onUploadFocus={moveToUploadPanel} />
+      <header className="print-only print-report-header">
+        <h1>InsightBoard 매출 리포트</h1>
+        <p>{fileName} · {source === "sample" ? "가상 샘플 데이터" : "업로드 데이터"} · {formatNumber(filteredRecords.length)}건</p>
+        <p>{[filters.query && "검색: " + filters.query, filters.category, filters.customerType, filters.region, filters.startDate && "시작: " + filters.startDate, filters.endDate && "종료: " + filters.endDate].filter(Boolean).join(" · ") || "전체 데이터 기준"}</p>
+      </header>
 
       <div ref={uploadRef}>
         <UploadPanel
@@ -190,6 +252,7 @@ export default function Home() {
           recordCount={records.length}
           sourceLabel={sourceLabel}
           error={error}
+          isReading={isReading}
           onFile={handleFile}
           onSample={loadSample}
           onReset={reset}
@@ -248,7 +311,7 @@ export default function Home() {
             <button
               type="button"
               onClick={handleDownload}
-              disabled={!hasFilteredData}
+              disabled={!hasFilteredData || isReading}
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-stone-300"
             >
               <Download size={17} />
@@ -257,7 +320,8 @@ export default function Home() {
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:text-emerald-700"
+              disabled={isReading || !hasFilteredData}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Printer size={17} />
               리포트 저장
@@ -278,21 +342,21 @@ export default function Home() {
                   <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                   <YAxis tickFormatter={(value) => `${Number(value) / 1000}천`} tick={{ fontSize: 12 }} />
                   <Tooltip formatter={(value) => formatCurrency(Number(value))} labelFormatter={(label) => `날짜: ${label}`} />
-                  <Area type="monotone" dataKey="revenue" name="매출" stroke="#10B981" fill="url(#revenue)" strokeWidth={2} />
+                  <Area type="linear" dataKey="revenue" name="매출" stroke="#10B981" fill="url(#revenue)" strokeWidth={2} isAnimationActive={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="카테고리별 매출 비율" description="카테고리별 매출 비중을 비교합니다." empty={!hasFilteredData}>
+            <ChartCard title="카테고리별 매출 비율" description={analytics.categoryRevenue.length > 8 ? "매출 상위 7개 카테고리와 나머지 합계를 비교합니다." : "카테고리별 매출 비중을 비교합니다."} empty={!hasFilteredData || analytics.totalRevenue === 0} emptyMessage={hasFilteredData ? "매출이 0원이므로 비중을 계산할 수 없습니다." : undefined}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={analytics.categoryRevenue} dataKey="value" nameKey="name" innerRadius={62} outerRadius={98} paddingAngle={3}>
-                    {analytics.categoryRevenue.map((entry, index) => (
+                  <Pie data={categoryChartData} dataKey="value" nameKey="name" innerRadius={58} outerRadius={90} paddingAngle={3} isAnimationActive={false}>
+                    {categoryChartData.map((entry, index) => (
                       <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                  <Legend />
+                  <Legend wrapperStyle={{ fontSize: 11, maxHeight: 72, overflowY: "auto", overflowWrap: "anywhere" }} />
                 </PieChart>
               </ResponsiveContainer>
             </ChartCard>
@@ -302,21 +366,21 @@ export default function Home() {
                 <BarChart data={analytics.productRevenue} layout="vertical" margin={{ left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e7e2d8" />
                   <XAxis type="number" tickFormatter={(value) => `${Number(value) / 1000}천`} tick={{ fontSize: 12 }} />
-                  <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12 }} />
+                  <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 11 }} tickFormatter={(value) => String(value).length > 8 ? String(value).slice(0, 8) + "…" : String(value)} />
                   <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                  <Bar dataKey="value" name="매출" fill="#14B8A6" radius={[0, 8, 8, 0]} />
+                  <Bar dataKey="value" name="매출" fill="#14B8A6" radius={[0, 8, 8, 0]} isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="지역별 매출 비교" description="지역별 매출 규모를 비교합니다." empty={!hasFilteredData}>
+            <ChartCard title="지역별 매출 비교" description={analytics.regionRevenue.length > 10 ? "매출 상위 9개 지역과 나머지 합계를 비교합니다." : "지역별 매출 규모를 비교합니다."} empty={!hasFilteredData}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.regionRevenue}>
+                <BarChart data={regionChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e7e2d8" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} tickFormatter={(value) => String(value).length > 6 ? String(value).slice(0, 6) + "…" : String(value)} />
                   <YAxis tickFormatter={(value) => `${Number(value) / 1000}천`} tick={{ fontSize: 12 }} />
                   <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                  <Bar dataKey="value" name="매출" fill="#F59E0B" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="value" name="매출" fill="#F59E0B" radius={[8, 8, 0, 0]} isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             </ChartCard>
@@ -351,7 +415,9 @@ export default function Home() {
 
           <section className="mt-16">
             <DataTable
+              key={dataVersion}
               records={filteredRecords}
+              printing={isPrinting}
               filters={filters}
               categories={categories}
               customerTypes={customerTypes}
@@ -366,10 +432,10 @@ export default function Home() {
         </>
       ) : null}
 
-      <div className="mt-16">
+      <div className="no-print mt-16">
         <ProjectOverview />
       </div>
-      <footer className="py-8 text-center text-sm text-slate-500">
+      <footer className="no-print py-8 text-center text-sm text-slate-500">
         InsightBoard는 CSV 매출 데이터를 지표, 차트, 테이블, 리포트 흐름으로 정리한 포트폴리오 프로젝트입니다.
       </footer>
     </main>
@@ -391,13 +457,13 @@ function CustomerMixCard({
 }) {
   return (
     <article className="print-section min-w-0 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
-      <h3 className="text-lg font-bold text-slate-950">신규/재구매 고객 비율</h3>
+      <h3 className="text-lg font-bold text-slate-950">신규/재구매 주문 비중</h3>
       <p className="mt-2 text-[13px] leading-6 text-slate-600">고객 유형별 주문 비중을 비교합니다.</p>
       {hasData ? (
         <div className="mt-8">
           <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-            <CustomerRatio label="신규 고객" value={newRate} count={newCount} className="text-lime-700" />
-            <CustomerRatio label="재구매 고객" value={returningRate} count={returningCount} className="text-orange-600" />
+            <CustomerRatio label="신규 주문" value={newRate} count={newCount} className="text-lime-700" />
+            <CustomerRatio label="재구매 주문" value={returningRate} count={returningCount} className="text-orange-600" />
           </div>
           <div className="mt-6 flex h-4 overflow-hidden rounded-full bg-stone-100">
             <div className="h-full bg-lime-500" style={{ width: `${newRate}%` }} />
@@ -469,4 +535,13 @@ function EmptyCard() {
 
 function unique(values: string[]) {
   return [...new Set(values)].sort((a, b) => a.localeCompare(b));
+}
+
+function compactChartGroups(groups: { name: string; value: number }[], limit: number) {
+  if (groups.length <= limit) return groups;
+  const visible = groups.slice(0, limit - 1);
+  const remaining = groups.slice(limit - 1);
+  let name = `기타 ${remaining.length}개 (합산)`;
+  while (groups.some((group) => group.name === name)) name += "*";
+  return [...visible, { name, value: remaining.reduce((sum, group) => sum + group.value, 0) }];
 }

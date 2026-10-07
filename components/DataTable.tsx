@@ -1,4 +1,4 @@
-import { ArrowDownUp, ChevronLeft, ChevronRight, RotateCcw, Search } from "lucide-react";
+import { ArrowDown, ArrowDownUp, ArrowUp, ChevronLeft, ChevronRight, RotateCcw, Search } from "lucide-react";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import type { Filters, SalesRecord, SortKey } from "@/types/sales";
@@ -7,6 +7,7 @@ import { getRevenue } from "@/lib/analytics";
 
 type DataTableProps = {
   records: SalesRecord[];
+  printing: boolean;
   filters: Filters;
   categories: string[];
   customerTypes: string[];
@@ -22,6 +23,7 @@ const pageSize = 10;
 
 export function DataTable({
   records,
+  printing,
   filters,
   categories,
   customerTypes,
@@ -38,6 +40,9 @@ export function DataTable({
   const start = records.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
   const end = Math.min(records.length, safePage * pageSize);
   const visibleRecords = records.slice(start - 1, end);
+  const tableRecords = printing ? records : visibleRecords;
+  const hasActiveFilters = Object.values(filters).some(Boolean);
+  const invalidDateRange = Boolean(filters.startDate && filters.endDate && filters.startDate > filters.endDate);
 
   const activeFilters = useMemo(() => {
     const values = [
@@ -61,6 +66,10 @@ export function DataTable({
     setPage(1);
     onResetFilters();
   };
+  const changeSort = (key: SortKey) => {
+    setPage(1);
+    onSortChange(key);
+  };
 
   return (
     <section className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
@@ -68,12 +77,13 @@ export function DataTable({
         <div className="min-w-0">
           <h2 className="text-2xl font-bold text-slate-950">원본 데이터 테이블</h2>
           <p className="mt-1 text-sm text-slate-500">
-            총 {formatNumber(records.length)}개 중 {formatNumber(start)}~{formatNumber(end)}개 표시
+            {printing ? `필터 결과 전체 ${formatNumber(records.length)}개 표시` : `총 ${formatNumber(records.length)}개 중 ${formatNumber(start)}~${formatNumber(end)}개 표시`}
           </p>
         </div>
         <button
           type="button"
           onClick={resetFilters}
+          disabled={!hasActiveFilters}
           className="no-print inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <RotateCcw size={16} />
@@ -89,6 +99,7 @@ export function DataTable({
         <label className="relative min-w-0">
           <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
           <input
+            aria-label="상품명, 카테고리, 지역 검색"
             value={filters.query}
             onChange={(event) => updateFilter("query", event.target.value)}
             placeholder="상품명, 카테고리, 지역 검색"
@@ -101,6 +112,7 @@ export function DataTable({
         <div className="grid min-w-0 grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-2 xl:col-span-1">
           <input
             type="date"
+            max={filters.endDate || undefined}
             aria-label="날짜 시작"
             value={filters.startDate}
             onChange={(event) => updateFilter("startDate", event.target.value)}
@@ -108,6 +120,7 @@ export function DataTable({
           />
           <input
             type="date"
+            min={filters.startDate || undefined}
             aria-label="날짜 종료"
             value={filters.endDate}
             onChange={(event) => updateFilter("endDate", event.target.value)}
@@ -115,8 +128,17 @@ export function DataTable({
           />
         </div>
       </div>
+      {invalidDateRange && <p className="no-print mt-3 text-sm text-red-700" role="alert">종료 날짜는 시작 날짜보다 빠를 수 없습니다.</p>}
+      <div className="no-print mt-4 flex items-center gap-2 sm:hidden">
+        <select aria-label="정렬 기준" value={sortKey} onChange={(event) => changeSort(event.target.value as SortKey)} className="h-10 min-w-0 flex-1 rounded-xl border border-stone-300 bg-white px-3 text-sm">
+          <option value="date">날짜순</option><option value="quantity">수량순</option><option value="revenue">매출순</option>
+        </select>
+        <button type="button" onClick={() => changeSort(sortKey)} aria-label={sortDirection === "asc" ? "오름차순, 내림차순으로 변경" : "내림차순, 오름차순으로 변경"} title={sortDirection === "asc" ? "내림차순으로 변경" : "오름차순으로 변경"} className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-stone-300 text-emerald-700">
+          {sortDirection === "asc" ? <ArrowUp size={17} /> : <ArrowDown size={17} />}
+        </button>
+      </div>
 
-      <div className="mt-6 grid gap-3 sm:hidden">
+      <div className="no-print mt-6 grid gap-3 sm:hidden">
         {visibleRecords.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50 px-4 py-8 text-center text-sm font-semibold text-slate-500">
             조건에 맞는 데이터가 없습니다. 필터를 변경해보세요.
@@ -126,7 +148,7 @@ export function DataTable({
             <article key={record.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-base font-bold text-slate-950">{record.product}</p>
+                  <p className="break-words text-base font-bold text-slate-950">{record.product}</p>
                   <p className="mt-1 text-xs font-semibold text-slate-500">
                     {record.date} · {record.category}
                   </p>
@@ -156,37 +178,37 @@ export function DataTable({
         )}
       </div>
 
-      <div className="mt-6 hidden min-w-0 max-w-full overflow-hidden rounded-2xl border border-stone-200 sm:block">
-        <div className="w-full max-w-full overflow-x-auto">
-          <table className="w-full min-w-[820px] border-collapse text-left text-[13px] sm:min-w-[960px]">
+      <div className="print-table-container mt-6 hidden min-w-0 max-w-full overflow-hidden rounded-2xl border border-stone-200 sm:block">
+        <div className="print-table-scroll w-full max-w-full overflow-x-auto" tabIndex={0} role="region" aria-label="매출 데이터 표">
+          <table className="sales-table w-full min-w-[820px] border-collapse text-left text-[13px] sm:min-w-[960px]">
             <thead className="bg-stone-50 text-xs font-bold text-slate-600">
               <tr>
-                <SortableTh label="날짜" active={sortKey === "date"} direction={sortDirection} onClick={() => onSortChange("date")} />
+                <SortableTh label="날짜" active={sortKey === "date"} direction={sortDirection} onClick={() => changeSort("date")} />
                 <th className="px-4 py-3">상품명</th>
                 <th className="px-4 py-3">카테고리</th>
                 <th className="px-4 py-3 text-right">가격</th>
-                <SortableTh label="수량" active={sortKey === "quantity"} direction={sortDirection} onClick={() => onSortChange("quantity")} align="right" />
-                <SortableTh label="매출" active={sortKey === "revenue"} direction={sortDirection} onClick={() => onSortChange("revenue")} align="right" />
+                <SortableTh label="수량" active={sortKey === "quantity"} direction={sortDirection} onClick={() => changeSort("quantity")} align="right" />
+                <SortableTh label="매출" active={sortKey === "revenue"} direction={sortDirection} onClick={() => changeSort("revenue")} align="right" />
                 <th className="px-4 py-3">고객 유형</th>
                 <th className="px-4 py-3">지역</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {visibleRecords.length === 0 ? (
+              {tableRecords.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-10 text-center font-semibold text-slate-500">
                     조건에 맞는 데이터가 없습니다. 필터를 변경해보세요.
                   </td>
                 </tr>
               ) : (
-                visibleRecords.map((record) => (
+                tableRecords.map((record) => (
                   <tr key={record.id} className="hover:bg-emerald-50/40">
-                    <td className="h-12 px-4 py-3 font-semibold text-slate-800">{record.date}</td>
-                    <td className="px-4 py-3 text-slate-700">{record.product}</td>
-                    <td className="px-4 py-3 text-slate-700">{record.category}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-slate-700">{formatCurrency(record.price)}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-slate-700">{formatNumber(record.quantity)}</td>
-                    <td className="px-4 py-3 text-right font-bold tabular-nums text-slate-950">{formatCurrency(getRevenue(record))}</td>
+                    <td className="h-12 whitespace-nowrap px-4 py-3 font-semibold text-slate-800">{record.date}</td>
+                    <td className="max-w-64 break-words px-4 py-3 text-slate-700">{record.product}</td>
+                    <td className="max-w-48 break-words px-4 py-3 text-slate-700">{record.category}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-slate-700">{formatCurrency(record.price)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-slate-700">{formatNumber(record.quantity)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums text-slate-950">{formatCurrency(getRevenue(record))}</td>
                     <td className="px-4 py-3">
                       <span className="inline-flex whitespace-nowrap rounded-full bg-stone-100 px-3 py-1 text-xs font-bold text-slate-700">
                         {record.customerType}
@@ -206,11 +228,11 @@ export function DataTable({
           {formatNumber(safePage)} / {formatNumber(totalPages)} 페이지
         </p>
         <div className="grid grid-cols-2 gap-2 sm:flex">
-          <PaginationButton disabled={safePage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>
+          <PaginationButton disabled={safePage <= 1} onClick={() => setPage(Math.max(1, safePage - 1))}>
             <ChevronLeft size={16} />
             이전
           </PaginationButton>
-          <PaginationButton disabled={safePage >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>
+          <PaginationButton disabled={safePage >= totalPages} onClick={() => setPage(Math.min(totalPages, safePage + 1))}>
             다음
             <ChevronRight size={16} />
           </PaginationButton>
@@ -223,6 +245,7 @@ export function DataTable({
 function Select({ value, onChange, options, label }: { value: string; onChange: (value: string) => void; options: string[]; label: string }) {
   return (
     <select
+      aria-label={label}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       className="h-11 min-w-0 rounded-xl border border-stone-300 bg-white px-4 text-sm"
@@ -251,15 +274,15 @@ function SortableTh({
   align?: "left" | "right";
 }) {
   return (
-    <th className={`px-4 py-3 ${align === "right" ? "text-right" : ""}`}>
+    <th aria-sort={active ? direction === "asc" ? "ascending" : "descending" : "none"} className={`px-4 py-3 ${align === "right" ? "text-right" : ""}`}>
       <button
         type="button"
         onClick={onClick}
         className={`inline-flex items-center gap-1 font-bold text-slate-600 hover:text-emerald-700 ${align === "right" ? "justify-end" : ""}`}
       >
         {label}
-        <ArrowDownUp size={13} />
-        <span className="sr-only">{active ? direction : "정렬"}</span>
+        {active ? direction === "asc" ? <ArrowUp size={13} /> : <ArrowDown size={13} /> : <ArrowDownUp size={13} />}
+        <span className="sr-only">{active ? direction === "asc" ? "오름차순" : "내림차순" : "정렬"}</span>
       </button>
     </th>
   );

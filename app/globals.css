@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f6f2;
+  --background: #f7f8f6;
   --foreground: #1f2933;
   --panel: #ffffff;
   --muted: #667085;
@@ -15,6 +15,7 @@
 
 * {
   box-sizing: border-box;
+  letter-spacing: 0;
 }
 
 html {
@@ -27,12 +28,12 @@ body {
   margin: 0;
   min-height: 100vh;
   overflow-x: hidden;
-  background:
-    radial-gradient(circle at 10% 0%, rgba(16, 185, 129, 0.12), transparent 300px),
-    linear-gradient(180deg, #f7f6f2 0%, #f0eee7 100%);
-  background-repeat: no-repeat;
+  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
 }
 
 main,
@@ -52,6 +53,66 @@ select {
   font: inherit;
 }
 
+button:not(:disabled),
+summary {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+button,
+input,
+select {
+  touch-action: manipulation;
+}
+
+input[type="date"] {
+  width: 100%;
+  max-width: 100%;
+}
+
+.kpi-value {
+  min-height: 2.7em;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.kpi-card {
+  border-color: #e5e9e3;
+  box-shadow: 0 3px 12px rgba(35, 57, 44, .035);
+}
+
+.sales-table tbody tr:nth-child(even) {
+  background: #fafbf9;
+}
+
+.sales-table th,
+.sales-table td {
+  vertical-align: middle;
+}
+
+.recharts-tooltip-wrapper {
+  max-width: 260px;
+}
+
+.recharts-default-tooltip {
+  border-radius: 10px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  box-shadow: 0 4px 16px rgba(31, 41, 51, .08);
+}
+
+.print-only {
+  display: none;
+}
+
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
@@ -60,16 +121,28 @@ select:focus-visible,
   outline-offset: 2px;
 }
 
-@media (max-width: 640px) {
-  body {
-    background: linear-gradient(180deg, #f7f6f2 0%, #f0eee7 100%);
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
   }
 }
 
 @media print {
+  @page { size: A4; margin: 12mm; }
+
   body {
     background: #ffffff;
+    overflow: visible;
   }
+
+  main { max-width: none !important; padding: 0 !important; overflow: visible !important; }
+
+  .print-only { display: block; }
+  .print-report-header { padding-bottom: 18px; border-bottom: 1px solid #d8dee8; }
+  .print-report-header h1 { font-size: 22px; font-weight: 700; }
+  .print-report-header p { font-size: 10px; margin-top: 6px; }
 
   .no-print {
     display: none !important;
@@ -85,4 +158,15 @@ select:focus-visible,
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
+
+  .print-table-container { display: block !important; overflow: visible !important; border-radius: 0; }
+  .print-table-scroll { overflow: visible !important; }
+  .sales-table { min-width: 0 !important; width: 100%; table-layout: fixed; font-size: 8px; }
+  .sales-table thead { display: table-header-group; font-size: 8px; }
+  .sales-table tr { break-inside: avoid; }
+  .sales-table td, .sales-table th { padding: 7px 4px; white-space: normal !important; overflow-wrap: anywhere; }
+  .sales-table th button { text-align: left; display: inline; }
+  .sales-table th svg, .sales-table th .sr-only { display: none; }
+  .sales-table td span { white-space: normal !important; padding: 0; background: transparent; font-size: inherit; }
+  .kpi-value { display: block; overflow: visible; font-size: 20px; min-height: 0; }
 }

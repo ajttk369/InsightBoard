@@ -12,7 +12,7 @@ const groupRevenue = <T extends string>(records: SalesRecord[], keySelector: (re
 
   return [...totals.entries()]
     .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value);
+    .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "ko"));
 };
 
 const groupQuantity = (records: SalesRecord[]) => {
@@ -24,7 +24,7 @@ const groupQuantity = (records: SalesRecord[]) => {
 
   return [...totals.entries()]
     .map(([name, quantity]) => ({ name, quantity }))
-    .sort((a, b) => b.quantity - a.quantity);
+    .sort((a, b) => b.quantity - a.quantity || a.name.localeCompare(b.name, "ko"));
 };
 
 export const getRevenue = revenueOf;
@@ -50,9 +50,9 @@ export const buildAnalytics = (records: SalesRecord[]) => {
     totalOrders,
     averageOrderValue,
     returningRate,
-    topCategory: categoryRevenue[0]?.name ?? "-",
+    topCategory: totalRevenue > 0 ? categoryRevenue[0]?.name ?? "-" : "-",
     topProduct: productQuantity[0]?.name ?? "-",
-    topRegion: regionRevenue[0]?.name ?? "-",
+    topRegion: totalRevenue > 0 ? regionRevenue[0]?.name ?? "-" : "-",
     categoryRevenue,
     productRevenue: productRevenue.slice(0, 5),
     regionRevenue,
@@ -61,11 +61,10 @@ export const buildAnalytics = (records: SalesRecord[]) => {
   };
 };
 
-export const buildInsights = (records: SalesRecord[]): Insight[] => {
+export const buildInsights = (records: SalesRecord[], analytics = buildAnalytics(records)): Insight[] => {
   if (records.length === 0) return [];
 
-  const analytics = buildAnalytics(records);
-  const categoryShare = analytics.categoryRevenue[0] ? (analytics.categoryRevenue[0].value / analytics.totalRevenue) * 100 : 0;
+  const categoryShare = analytics.totalRevenue > 0 ? (analytics.categoryRevenue[0].value / analytics.totalRevenue) * 100 : 0;
   const topProductsShare = analytics.totalRevenue
     ? (analytics.productRevenue.reduce((sum, item) => sum + item.value, 0) / analytics.totalRevenue) * 100
     : 0;
@@ -75,27 +74,33 @@ export const buildInsights = (records: SalesRecord[]): Insight[] => {
   return [
     {
       title: "카테고리 집중도",
-      body: `${analytics.topCategory} 카테고리가 전체 매출의 ${categoryShare.toFixed(1)}%를 차지합니다. 주력 카테고리로 따로 관리할 만합니다.`,
+      body: analytics.totalRevenue > 0
+        ? `${analytics.topCategory} 카테고리가 매출의 ${categoryShare.toFixed(1)}%를 차지합니다. 현재 필터에 포함된 데이터 기준입니다.`
+        : "매출 합계가 0원이므로 카테고리 매출 비중을 계산할 수 없습니다.",
       tag: "카테고리",
       tone: "positive",
     },
     {
       title: "재구매 흐름",
-      body: `재구매 비율은 ${analytics.returningRate.toFixed(1)}%입니다. 반복 구매 고객을 위한 혜택이나 알림을 분리해 볼 수 있습니다.`,
+      body: `재구매로 분류된 데이터 행의 비중은 ${analytics.returningRate.toFixed(1)}%입니다. 고객별 구매 이력으로 계산한 재구매율은 아닙니다.`,
       tag: "고객",
-      tone: analytics.returningRate >= 35 ? "positive" : "suggestion",
+      tone: "suggestion",
     },
     {
       title: "지역 매출",
-      body: `${analytics.topRegion} 지역이 전체 매출의 ${regionShare.toFixed(1)}%를 만들었습니다. 지역별 프로모션 기준으로 활용할 수 있습니다.`,
+      body: analytics.totalRevenue > 0
+        ? `${analytics.topRegion} 지역이 매출의 ${regionShare.toFixed(1)}%를 차지합니다. 고객 수가 아닌 매출 합계 기준입니다.`
+        : "매출 합계가 0원이므로 지역별 매출 비중을 계산할 수 없습니다.",
       tag: "지역",
       tone: "positive",
     },
     {
       title: "상품 의존도",
-      body: `상위 5개 상품이 전체 매출의 ${topProductsShare.toFixed(1)}%를 차지합니다. 품절과 재고 회전율을 같이 확인하는 것이 좋습니다.`,
+      body: analytics.totalRevenue > 0
+        ? `매출 상위 ${analytics.productRevenue.length}개 상품의 합계는 전체의 ${topProductsShare.toFixed(1)}%입니다. 판매 수량 순위와는 다를 수 있습니다.`
+        : "매출 합계가 0원이므로 상품별 매출 비중을 계산할 수 없습니다.",
       tag: "상품",
-      tone: topProductsShare >= 60 ? "warning" : "suggestion",
+      tone: "suggestion",
     },
   ];
 };

@@ -4,10 +4,11 @@ type ChartCardProps = {
   title: string;
   description: string;
   empty?: boolean;
+  emptyMessage?: string;
   children: ReactNode;
 };
 
-export function ChartCard({ title, description, empty, children }: ChartCardProps) {
+export function ChartCard({ title, description, empty, emptyMessage = "표시할 데이터가 없습니다.", children }: ChartCardProps) {
   return (
     <article className="print-section min-w-0 max-w-full overflow-hidden rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
       <div className="mb-5">
@@ -16,7 +17,7 @@ export function ChartCard({ title, description, empty, children }: ChartCardProp
       </div>
       {empty ? (
         <div className="flex h-72 items-center justify-center rounded-xl border border-dashed border-stone-300 bg-stone-50 text-sm font-semibold text-slate-500">
-          표시할 데이터가 없습니다.
+          {emptyMessage}
         </div>
       ) : (
         <div className="h-72 w-full min-w-0 overflow-hidden">{children}</div>

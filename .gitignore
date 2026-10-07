@@ -2,4 +2,7 @@
 .next
 .env
 .env.local
+.env.*
+!.env.example
+.dev-logs/
 .DS_Store
